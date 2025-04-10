@@ -1,1 +1,18 @@
 
+name: widget-server pipe
+
+on:
+    push:
+        branches: [main]
+
+jobs:
+    build:
+        name: build
+        
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+            
+            
