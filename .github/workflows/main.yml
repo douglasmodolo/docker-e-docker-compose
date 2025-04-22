@@ -38,11 +38,26 @@ jobs:
           SHA=$(echo $GITHUB_SHA | cut -c1-7)
           echo "sha=${SHA}" >> $GITHUB_OUTPUT
 
-      - name: Build and push the image do DockerHub
-        id: build-push-image
-        env:
-          DOCKERHUB_REPOSITORY: ${{ vars.DOCKERHUB_REPOSITORY }}
-          IMAGE_TAG: ${{ steps.generate_tag.outputs.sha }}
-        run: |
-          docker build -t $DOCKERHUB_REPOSITORY:$IMAGE_TAG .
-          docker push $DOCKERHUB_REPOSITORY:$IMAGE_TAG
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ${{ vars.DOCKERHUB_REPOSITORY }}:${{ steps.generate_tag.outputs.sha }}
+
+      - name: Run Trivy scanner
+        id: run-trivy-scanner
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: '${{ vars.DOCKERHUB_REPOSITORY }}:${{ steps.generate_tag.outputs.sha }}'
+          format: 'table'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+
+      - name: Push image to DockerHub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ vars.DOCKERHUB_REPOSITORY }}:${{ steps.generate_tag.outputs.sha }}
