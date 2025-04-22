@@ -32,6 +32,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
       - name: Generate tag
         id: generate_tag
         run: |
@@ -43,6 +46,8 @@ jobs:
         with:
           context: .
           load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: ${{ vars.DOCKERHUB_REPOSITORY }}:${{ steps.generate_tag.outputs.sha }}
 
       - name: Run Trivy scanner
@@ -60,4 +65,5 @@ jobs:
         with:
           context: .
           push: true
+          cache-from: type=gha
           tags: ${{ vars.DOCKERHUB_REPOSITORY }}:${{ steps.generate_tag.outputs.sha }}
